@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "go-app.fullname" . }}-dashboard
+  labels:
+    grafana_dashboard: "1"
+    {{- include "go-app.labels" . | nindent 4 }}
+  annotations:
+    grafana_folder: "Scaffolded Apps"
+data:
+  ${{values.app_name}}-${{values.app_env}}.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 0,
+      "schemaVersion": 39,
+      "style": "dark",
+      "tags": ["scaffolded", "${{values.app_env}}"],
+      "time": {"from": "now-1h", "to": "now"},
+      "refresh": "30s",
+      "title": "${{values.app_name}} (${{values.app_env}})",
+      "uid": "app-${{values.app_name}}-${{values.app_env}}",
+      "templating": {"list": []},
+      "links": [
+        {"title": "Source", "type": "link", "url": "https://github.com/octal-engine/${{values.app_name}}", "targetBlank": true, "icon": "external link"},
+        {"title": "App",    "type": "link", "url": "https://${{values.app_name}}-${{values.app_env}}.gabrieleweka.dev", "targetBlank": true, "icon": "external link"},
+        {"title": "ArgoCD", "type": "link", "url": "https://argocd.gabrieleweka.dev/applications/${{values.app_name}}", "targetBlank": true, "icon": "external link"}
+      ],
+      "panels": [
+        {"type": "row", "title": "Health", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}, "id": 100},
+
+        {"type": "stat", "id": 1, "title": "Ready replicas", "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
+          "targets": [{"expr": "sum(kube_deployment_status_replicas_ready{namespace=\"${{values.app_env}}\",deployment=\"${{values.app_name}}\"})", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+          "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}},
+
+        {"type": "stat", "id": 2, "title": "Desired replicas", "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+          "targets": [{"expr": "sum(kube_deployment_spec_replicas{namespace=\"${{values.app_env}}\",deployment=\"${{values.app_name}}\"})", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "palette-classic"}}},
+          "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}},
+
+        {"type": "stat", "id": 3, "title": "Pod restarts (24h)", "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+          "targets": [{"expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"${{values.app_env}}\",pod=~\"${{values.app_name}}-.*\"}[24h]))", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5}]}}},
+          "options": {"reduceOptions": {"values": false, "calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}},
+
+        {"type": "stat", "id": 4, "title": "Image tag", "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+          "targets": [{"expr": "kube_pod_container_info{namespace=\"${{values.app_env}}\",pod=~\"${{values.app_name}}-.*\",container=\"${{values.app_name}}\"}", "refId": "A", "format": "table", "instant": true}],
+          "fieldConfig": {"defaults": {"custom": {"displayMode": "color-text"}, "color": {"mode": "fixed", "fixedColor": "blue"}}},
+          "options": {"reduceOptions": {"fields": "/^image_id$|^image$/", "values": false, "calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none", "textMode": "value"},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}},
+
+        {"type": "row", "title": "Resource usage", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5}, "id": 101},
+
+        {"type": "timeseries", "id": 10, "title": "CPU usage (cores)", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+          "targets": [{"expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"${{values.app_env}}\",pod=~\"${{values.app_name}}-.*\",image!=\"\"}[5m]))", "refId": "A", "legendFormat": "{{ `{{pod}}` }}"}],
+          "fieldConfig": {"defaults": {"unit": "short", "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 15}}},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}},
+
+        {"type": "timeseries", "id": 11, "title": "Memory working set (bytes)", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+          "targets": [{"expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"${{values.app_env}}\",pod=~\"${{values.app_name}}-.*\",image!=\"\"})", "refId": "A", "legendFormat": "{{ `{{pod}}` }}"}],
+          "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 15}}},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}},
+
+        {"type": "row", "title": "Network (from kubelet/cAdvisor)", "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14}, "id": 102},
+
+        {"type": "timeseries", "id": 20, "title": "Network RX (bytes/s)", "gridPos": {"h": 7, "w": 12, "x": 0, "y": 15},
+          "targets": [{"expr": "sum by (pod) (rate(container_network_receive_bytes_total{namespace=\"${{values.app_env}}\",pod=~\"${{values.app_name}}-.*\"}[5m]))", "refId": "A", "legendFormat": "{{ `{{pod}}` }}"}],
+          "fieldConfig": {"defaults": {"unit": "Bps", "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 15}}},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}},
+
+        {"type": "timeseries", "id": 21, "title": "Network TX (bytes/s)", "gridPos": {"h": 7, "w": 12, "x": 12, "y": 15},
+          "targets": [{"expr": "sum by (pod) (rate(container_network_transmit_bytes_total{namespace=\"${{values.app_env}}\",pod=~\"${{values.app_name}}-.*\"}[5m]))", "refId": "A", "legendFormat": "{{ `{{pod}}` }}"}],
+          "fieldConfig": {"defaults": {"unit": "Bps", "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 15}}},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+          "datasource": {"type": "prometheus", "uid": "prometheus"}}
+      ],
+      "version": 1
+    }
