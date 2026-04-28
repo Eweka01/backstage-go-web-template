@@ -1,5 +1,5 @@
 site_name: ${{values.app_name}}
-site_description: Go Snake-game app — ${{values.app_name}}
+site_description: Go web app with Bootstrap landing page — ${{values.app_name}}
 repo_url: https://github.com/octal-engine/${{values.app_name}}
 edit_uri: edit/main/docs/
 

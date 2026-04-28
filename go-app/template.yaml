@@ -1,9 +1,9 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: go-template
-  title: Go Snake-game template
-  description: Provisions a Go web app with a Snake game and two API endpoints
+  name: go-web-template
+  title: Go web app
+  description: Provisions a Go web app with a Bootstrap landing page (Tooplate Barista theme) and two API endpoints. Final image is ~17 MB on a scratch base.
 spec:
   owner: development
   type: service
