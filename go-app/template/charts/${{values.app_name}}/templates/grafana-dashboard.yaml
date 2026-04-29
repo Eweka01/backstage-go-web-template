@@ -15,7 +15,7 @@ data:
       "graphTooltip": 0,
       "schemaVersion": 39,
       "style": "dark",
-      "tags": ["scaffolded", "${{values.app_env}}"],
+      "tags": ["scaffolded", "${{values.app_env}}", "app-${{values.app_name}}-${{values.app_env}}"],
       "time": {"from": "now-1h", "to": "now"},
       "refresh": "30s",
       "title": "${{values.app_name}} (${{values.app_env}})",
