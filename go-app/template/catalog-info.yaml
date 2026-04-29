@@ -10,6 +10,7 @@ metadata:
     argocd/app-name: ${{values.app_name}}
     grafana/dashboard-selector: "app-${{values.app_name}}-${{values.app_env}}"
     grafana/alert-label-selector: "namespace=${{values.app_env}}"
+    grafana/dashboard-url: "https://grafana.gabrieleweka.dev/d/app-${{values.app_name}}-${{values.app_env}}"
   links:
     - url: https://${{values.app_name}}-${{values.app_env}}.gabrieleweka.dev
       title: Live app
